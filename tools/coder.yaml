@@ -1,0 +1,43 @@
+Steps:
+- Handle: root
+  Hide input: true
+  Transitions:
+  - language
+  Prompts:
+  - Prompt: '@this'
+- Handle: language
+  Name: Language
+  Caption: Code in...
+  Presentation: Code in [b]@this[/b]
+  Transitions:
+  - action
+  Prompts:
+  - Modality: main
+    Prompt: The following code in @this
+    Prompt if current: The following code in <span id="language">@this
+    Stop at:
+    - <
+- Handle: action
+  Name: Goal
+  Caption: that will...
+  Presentation: that will [b]@this[/b]
+  Transitions:
+  - code
+  Prompts:
+  - Modality: main
+    Prompt: |2+
+       will @this:
+
+    Stop at: []
+- Handle: code
+  Name: Code
+  Caption: 'Code:'
+  Presentation: '[code]@this[/code]'
+  Prompts:
+  - Modality: main
+    Prompt: |-
+      [code]
+      @this
+      [/code]
+    Stop at:
+    - '[/'

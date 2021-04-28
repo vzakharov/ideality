@@ -1,3 +1,6 @@
+Name: Talking with the Greats
+Description: |-
+  What would have famous people (living or deceased) said about things you care about? Let’s find out!
 Steps:
 - Handle: root
   Hide input: true
@@ -6,12 +9,14 @@ Steps:
   Prompts:
   - Prompt: '@this'
 - Handle: person
-  Name: Author
-  Caption: 'Author:'
-  Presentation: '[b]Author:[/b] @this'
+  Name: Who
+  Caption: 'Who:'
+  Presentation: '[b]@this[/b]'
   Transitions:
   - topic
   - quote
+  - question_initial
+  - person-b
   Prompts:
   - Modality: main
     Prompt: '@this once said'
@@ -21,10 +26,23 @@ Steps:
   - Modality: multiple
     Prompt: Here are some of @this’s best quotes
   Default modality: main
+- Handle: question_initial
+  Name: Question
+  Caption: 'Question:'
+  Presentation: '[b]@this[/b]'
+  Transitions:
+  - answer
+  Prompts:
+  - Modality: question_initial
+    Prompt: 'Someone once asked @person: “@this”'
+    Stop at:
+    - ”
+  - Modality: interview
+    Prompt: 'Interviewer: @this'
 - Handle: topic
   Name: Topic
   Caption: 'Topic:'
-  Presentation: '[b]Topic:[/b] @this'
+  Presentation: '[b]talks about[/b] @this'
   Transitions:
   - quote
   Prompts:
@@ -46,7 +64,7 @@ Steps:
   Caption: 'Quote:'
   Presentation: '[b]Quote:[/b]  “@this”'
   Transitions:
-  - question
+  - question_after_quote
   - quote_more
   - quote_go-on
   Prompts:
@@ -76,10 +94,10 @@ Steps:
     Prompt: |-
       ”
       - “@this
-- Handle: question
+- Handle: question_after_quote
   Name: Question
   Caption: 'Question:'
-  Presentation: '[b]Question:[/b] @this'
+  Presentation: '[b]@this[/b]'
   Transitions:
   - answer
   Prompts:
@@ -91,9 +109,9 @@ Steps:
 - Handle: answer
   Name: Answer
   Caption: 'Answer:'
-  Presentation: '[b]Answer:[/b] @this'
+  Presentation: '@this'
   Transitions:
-  - question
+  - question_after_quote
   Prompts:
   - Modality: interview
     Prompt: |2-
@@ -112,3 +130,45 @@ Steps:
     Stop at:
     - ”
     - (...)
+- Handle: person-b
+  Name: Talks to...
+  Caption: 'The other person:'
+  Presentation: and [b]@this[/b]
+  Transitions:
+  - topic_in-dialogue
+  Prompts:
+  - Modality: dialogue
+    Prompt: Here is a transcript of a dialogue between @person and @this
+- Handle: topic_in-dialogue
+  Name: Talk about...
+  Caption: talk about...
+  Presentation: talk about [b]@this[/b]
+  Transitions:
+  - utterance_person-a
+  Prompts:
+  - Modality: dialogue
+    Prompt: |2
+       about @this:
+- Handle: utterance_person-a
+  Name: A says...
+  Caption: 'A says:'
+  Presentation: '[b]@this[/b]'
+  Transitions:
+  - utterance_person-b
+  Prompts:
+  - Modality: dialogue
+    Prompt: |2-
+
+      @person: @this
+- Handle: utterance_person-b
+  Name: B says...
+  Caption: 'B says:'
+  Presentation: '@this'
+  Transitions:
+  - utterance_person-a
+  Prompts:
+  - Modality: dialogue
+    Prompt: |2-
+
+
+      @person-b: @this
