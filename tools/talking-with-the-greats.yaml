@@ -1,0 +1,114 @@
+Steps:
+- Handle: root
+  Hide input: true
+  Transitions:
+  - person
+  Prompts:
+  - Prompt: '@this'
+- Handle: person
+  Name: Author
+  Caption: 'Author:'
+  Presentation: '[b]Author:[/b] @this'
+  Transitions:
+  - topic
+  - quote
+  Prompts:
+  - Modality: main
+    Prompt: '@this once said'
+    Prompt if current: Here is a quote by the great <span id="author">@this
+    Stop at:
+    - <
+  - Modality: multiple
+    Prompt: Here are some of @this’s best quotes
+  Default modality: main
+- Handle: topic
+  Name: Topic
+  Caption: 'Topic:'
+  Presentation: '[b]Topic:[/b] @this'
+  Transitions:
+  - quote
+  Prompts:
+  - Modality: main
+    Prompt: ' about @this'
+    Prompt if current: ' about <span id="topic">@this'
+  - Modality: interview
+    Prompt: |+
+      Interviewer: What do you think about @this?
+
+    Stop at:
+    - \n\n
+  - Modality: multiple
+    Prompt: |2
+       about @this:
+  Default modality: main
+- Handle: quote
+  Name: Quote
+  Caption: 'Quote:'
+  Presentation: '[b]Quote:[/b]  “@this”'
+  Transitions:
+  - question
+  - quote_more
+  - quote_go-on
+  Prompts:
+  - Modality: main
+    Prompt: ': “@this'
+    Stop at:
+    - ”
+  - Modality: interview
+    Prompt: '@person: @this'
+    Stop at:
+    - \n
+  - Modality: multiple
+    Prompt: |-
+      :
+      - “@this
+    Stop at:
+    - ”
+  Default modality: main
+- Handle: quote_more
+  Name: More like this
+  Caption: 'Quote:'
+  Presentation: '- “@this”'
+  Transitions:
+  - quote_more
+  Prompts:
+  - Modality: multiple
+    Prompt: |-
+      ”
+      - “@this
+- Handle: question
+  Name: Question
+  Caption: 'Question:'
+  Presentation: '[b]Question:[/b] @this'
+  Transitions:
+  - answer
+  Prompts:
+  - Modality: interview
+    Prompt: |2-
+
+
+      Interviewer: @this
+- Handle: answer
+  Name: Answer
+  Caption: 'Answer:'
+  Presentation: '[b]Answer:[/b] @this'
+  Transitions:
+  - question
+  Prompts:
+  - Modality: interview
+    Prompt: |2-
+
+
+      @person: @this
+- Handle: quote_go-on
+  Name: Go on...
+  Caption: '...'
+  Presentation: '... @this'
+  Transitions:
+  - quote_go-on
+  Prompts:
+  - Modality: main
+    Prompt: ' (...) @this'
+    Stop at:
+    - ”
+    - (...)
