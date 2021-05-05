@@ -1,0 +1,94 @@
+Steps:
+- Handle: root
+  Hide input: true
+  Transitions:
+  - name
+  Prompts:
+  - Prompt: '@this'
+- Handle: name
+  Name: The language is called...
+  Caption: The language is called...
+  Presentation: A guide to [b]@this[/b]
+  Transitions:
+  - principles
+  - source_first
+  Prompts:
+  - Modality: main
+    Prompt: 'I have invented a new natural language that is called "@this". '
+    Stop at:
+    - '"'
+    - .
+- Handle: principles
+  Name: Principles
+  Caption: 'Guiding principles:'
+  Presentation: |-
+    [h2]Guiding principles[/h2]
+    @this
+  Transitions:
+  - source_first
+  Prompts:
+  - Modality: main
+    Prompt: |+
+      Its main principles are:
+      @this
+
+- Handle: source_first
+  Name: Phrase in English
+  Caption: Phrase in English
+  Presentation: |-
+    [h2]Phrasebook[/h2]
+
+    [b]@this[/b]
+  Transitions:
+  - translation
+  Prompts:
+  - Modality: main
+    Prompt: |
+      Here are some example translations:
+
+      English: "@this"
+    Stop at:
+    - '"'
+    - \n
+- Handle: translation
+  Name: Translation
+  Caption: Translates as...
+  Presentation: '[list]@this[/list]'
+  Transitions:
+  - source
+  - explanation
+  Prompts:
+  - Modality: main
+    Prompt: |
+      @name: "@this"
+    Stop at:
+    - '"'
+    - \n
+- Handle: source
+  Name: Another phrase
+  Caption: 'English:'
+  Presentation: '[b]@this[/b]'
+  Transitions:
+  - translation
+  Prompts:
+  - Modality: main
+    Prompt: |2
+
+      English: "@this"
+    Stop at:
+    - '"'
+    - \n
+- Handle: explanation
+  Name: Explanation
+  Caption: 'Explanation:'
+  Presentation: '[list][i](@this)[/i][/list]'
+  Transitions:
+  - source
+  Prompts:
+  - Modality: main
+    Prompt: |
+      Explanation: @this
+    Prompt if current: '(Explanation: @this'
+    Stop at:
+    - )
+    - \n
