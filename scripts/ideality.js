@@ -1,37 +1,19 @@
 ideality = {}
 
-ideality.readDocument = document => {
 
 
-    Object.assign(ideality, { document })
+ideality.nodeById = id => _.find(ideality.nodes, {id})
 
+ideality.parent = node => ideality.nodeById(node.parentId)
 
-    document.variations = _.sortBy(document.variations, 'body')
+ideality.children = node => _.filter(ideality.nodes, {parentId: node.id})
 
-    let { variations } = document
+ideality.leafs = () => ideality.nodes.filter(node => ideality.children(node).length == 0)
 
-    // Build the tree
-
-    ideality.tree = []
-    let lastVariation = {}
-
-    let { tree } = ideality
-
-    for ( let variation of variations ) {
-
-        let { body } = variation
-        let lastBody = lastVariation.body
-
-        for ( let i = 0; i < body.length; i++) {
-
-            if ( i < lastBody.length && body[i] == lastBody[i] ) continue
-
-            tree.push({
-                body: body.slice(0, i)
-            })
-
-        }
-
-    }
-
+ideality.roots = node => {
+  let parent = ideality.parent(node)
+  return parent ? [...ideality.roots(parent), parent] : []
 }
+
+ideality.threads = () => ideality.leafs().map( node => [...ideality.roots(node), node] )
+
