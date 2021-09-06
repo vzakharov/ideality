@@ -18,6 +18,11 @@
       "id": "4",
       "parentId": "2",
       "body": " machine learning and artificial intelligence."
+    },
+    {
+      "id": "5",
+      "parentId": "3",
+      "body": " That's why I always..."
     }
   ]
 }
