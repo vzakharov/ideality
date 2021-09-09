@@ -56,6 +56,8 @@ i.descendants = (parent, thread) =>
       [child, ...i.descendants(child)]
     ).flat()
 
+i.heritage = node => node ? [node, ...i.heritage(_.last(i.children(node)))] : []
+
 i.branchedNodes = (nodes) =>
   (nodes || i.nodes).filter(node => i.branched(node))
 
