@@ -8,13 +8,10 @@ if (!i.current)
 
 Object.defineProperties(i.current, {
   node: {
-    get: () => i.nodeById(i.current.nodeId)
-  },
-  variation: {
-    get: () => i.nodeById(i.current.variationId)
+    get: () => i.current.thread[Stator.nodeIndex]
   },
   thread: {
-    get: () => _.last(T.withNode(i.current.variation))
+    get: () => i.threads()[Stator.threadIndex]
   }
 })
 
@@ -206,7 +203,27 @@ i.toggleExpand = id => {
   bubble_fn_refresh()
 }
 
-i.nodeDisplay = node => `<a href="?node=${node.id}" onclick="i.gotoId(${i.escapeWithQuotes(node.id)}); return false">${i.escape(node.body) || "<em>[tba]</em>"}</a>`
+i.threadIndex = thread => i.threads().findIndex(t => _.last(t) == _.last(thread))
+
+i.routingIndices = node => {
+  let { thread } = i.current
+  if ( !thread || !thread.includes(node) ) {
+    thread = _.findLast(i.threads(), thread => thread.includes(node))
+  }
+  return {
+    v: i.threadIndex(thread),
+    n: _.findIndex(thread, node)
+  }
+}
+
+i.routingString = node => 
+  _.map(
+    i.routingIndices(node), 
+    (value, key) => [key, value].join('=')
+  ).join('&')
+
+
+i.nodeDisplay = node => `<a href="?${i.routingString(node)}" onclick="i.gotoId(${i.escapeWithQuotes(node.id)}); return false">${i.escape(node.body) || "<em>[tba]</em>"}</a>`
 
 i.display = nodes => 
   `<div style="font-family: Barlow, sans-serif; line-height: 1.5;">${nodes.map(node => {
@@ -239,19 +256,8 @@ i.sortAsTree = (parents = i.rootNodes()) =>
 i.gotoId = id => i.goto(i.nodeById(id))
 
 i.goto = node => {
-  let threadsWithCurrentNode = T.withNode(node)
-  let { variation } = i.current
-  if (
-    !variation 
-    || !i.variations().includes(variation) 
-    || _.isEmpty(T.withNode(variation, threadsWithCurrentNode))
-  ) {
-    variation = i.variation(_.last(threadsWithCurrentNode))
-  }
-  if (!node)
-    node = _.last(i.nodes)
-  if (variation != i.current.variation || node != i.current.node)
-    bubble_fn_goto([variation.id, node.id])
+  if (node != i.current.node)
+    bubble_fn_goto(_.values(i.routingIndices(node)))
   else
     i.refresh()
 }
@@ -306,6 +312,20 @@ B.doAction = slug => {
     i.goto(newNode)
   )
 }
+
+B.enclosingNodes = () => {
+  let { nodeIndex } = Stator
+  let { thread } = i.current
+  if ( nodeIndex )
+    return [
+      thread.slice(0, nodeIndex),
+      thread.slice(nodeIndex+1)
+    ]
+  else
+    return [thread, []]
+}
+
+B.displayBeforeAfter = () => _.map(B.enclosingNodes(), i.display)
 
 // Generic
 
