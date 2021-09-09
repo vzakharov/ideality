@@ -1,0 +1,92 @@
+nodes:
+  - id: '10'
+    parentId: null
+    body: 'As it stands, the AI market is divided among the large, '
+    expanded: false
+  - id: '21'
+    parentId: '10'
+    body: >2-
+       well-established technology companies, most notably IBM, Intel, Nvidia, Microsoft. Smaller firms are working on AI-based products as well.
+
+      Thus far there is no dominant AI platform with hundreds of thousands of
+      developers which are building applications on it that are flooding the
+      market.
+  - id: '22'
+    parentId: '10'
+    body: 'established corporations and '
+  - id: '23'
+    parentId: '22'
+    body: >-
+      newer players. But the future of AI is more than just a battle of giants:
+      It's about harnessing technology to make life easier and better for us
+      all.
+
+
+      The most disruptive use cases involve combining what we know about each
+      other with data from our surroundings—the way that automated car
+      navigation systems, for example, can combine information from your phone's
+      GPS and the satellite map on your screen to recommend an optimal route
+      home.
+  - id: '24'
+    parentId: '22'
+    body: 'the small, agile startups. The former '
+    expanded: false
+  - id: '25'
+    parentId: '24'
+    body: >-
+      are better computing power and more data, but the latter typically have
+      more novel ideas and innovative solutions to problems. As the AI landscape
+      evolves, two things remain constant: people work to make AI smarter, and
+      people develop new applications for it.
+
+
+      With that in mind, here are three popular applications of AI that you can
+      find on any device or computer today—and what's in store for the future.
+  - id: '26'
+    parentId: '24'
+    body: 'never seems to be able to '
+  - id: '27'
+    parentId: '26'
+    body: >-
+      keep up with the pace and creativity of the latter.
+
+
+      The small, agile startups that are leading the AI market today dominate
+      this sphere through sheer energy, guts and determination. They take
+      advantage of existing platforms for their products such as Amazon's Alexa
+      and Google's speech recognition software, which they develop in-house.
+      This makes them faster than their competitors and superior in quality.
+  - id: '28'
+    parentId: '26'
+    body: >-
+      provide the benefits of AI to all their customers, while the latter can
+      never fully exploit their full potential. The biggest hindrance to these
+      startups' success is the lack of talent in AI development.
+
+
+      This is where this article comes in. We've put together a list of AI
+      hiring companies that are looking for talented developers. This list will
+      help you locate your 
+    expanded: false
+  - id: '29'
+    parentId: '30'
+  - id: '30'
+    parentId: '28'
+    body: >-
+      talents among different companies and get your foot in the door if you're
+      an aspiring developer who wants to work with exciting AI products.
+  - id: '31'
+    parentId: '28'
+    body: >-
+      dream job in AI.
+
+
+      If you're a developer with experience in data science and the desire to
+      learn the new cutting-edge technology, then this is your list. If you're a
+      data scientist interested in transitioning into a development role, then
+      this is your list. If you're a technical recruiter who would like to
+      expand your skill set, then this is your list!
+
+
+      We've been asked for years about what companies are hiring Data Scientists
+      and I've been sitting on this information for quite some time.
