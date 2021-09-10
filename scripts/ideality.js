@@ -1,4 +1,4 @@
-if ( !window.i )
+if (!window.i)
   i = ideality = {
     nodes: []
   }
@@ -442,4 +442,5 @@ fl.add = (...objects) =>
     })
   )
 
+  
 true
