@@ -15,10 +15,15 @@ Object.defineProperties(i.current, {
   }
 })
 
+i.yaml = () => jsyaml.dump(_.pick(ideality, ['nodes']))
 
 i.save = () => {
   i.savedJson =_.last(i.history)
-  bubble_fn_save(jsyaml.dump(_.pick(ideality, ['nodes'])))
+  bubble_fn_save(i.yaml())
+}
+
+i.download = () => {
+  download(i.yaml(), S.documentSlug+'.yml')
 }
 
 i.nodeById = id => _.find(i.nodes, {id})
@@ -65,9 +70,8 @@ i.branchedDescendants = (parent, thread) =>
   i.branchedNodes(i.descendants(parent, thread))
 
 i.variation = thread =>
-  _.last(
-    thread.filter(node => i.hasSiblings(node))
-  ) || thread[0]
+  thread.filter(node => i.hasSiblings(node))[0]
+  || thread[0]
 
 i.variations = () => {
   let variations = i.branchedNodes().map(
@@ -84,11 +88,11 @@ T.all = i.threads = () => i.leafs().map( node => [...i.ancestors(node), node] )
 
 i.threadsFor = node => i.threads().filter(thread => thread.includes(node))
 
-i.defaultThreadFor = node => _.last(i.threadsFor(node))
+i.defaultThreadFor = node => (i.threadsFor(node))[0]
 
-i.refresh = () => {
-  i.history.push(JSON.stringify(nodes))
-  bubble_fn_refresh()
+i.refresh = (dontFocusOnInput) => {
+  i.history.push(JSON.stringify(i.nodes))
+  bubble_fn_refresh(dontFocusOnInput)
 }
 
 N = i.NodeAction = {}
@@ -101,7 +105,7 @@ N.create = () => {
       )
     ) + 1 || 1).toString()
   }
-  i.nodes.push(newNode)
+  i.nodes.unshift(newNode)
   return newNode
 }
 
@@ -210,7 +214,7 @@ i.threadIndex = thread => i.threads().findIndex(t => _.last(t) == _.last(thread)
 i.routingIndices = node => {
   let { thread } = i.current
   if ( !thread || !thread.includes(node) ) {
-    thread = _.findLast(i.threads(), thread => thread.includes(node))
+    thread = _.find(i.threads(), thread => thread.includes(node))
   }
   return {
     v: i.threadIndex(thread),
@@ -225,21 +229,46 @@ i.routingString = node =>
   ).join('&')
 
 
-i.nodeDisplay = node => `<a href="?${i.routingString(node)}" onclick="i.gotoId(${i.escapeWithQuotes(node.id)}); return false">${i.escape(node.body) || "<em>[tba]</em>"}</a>`
+i.nodeDisplay = (node, nested) => 
+  (node == i.current.node ? '' : `<a 
+    href="?${i.routingString(node)}" 
+    onclick="
+      i.gotoId(${i.escapeWithQuotes(node.id)}); 
+      return false
+    "
+  >
+    ${i.escape(node.body) || "<em>[tba]</em>"}
+  </a>`
+  ) + (i.branched(node) ?
+    `<span 
+      style="color: lightgray; font-size:x-small; vertical-align: bottom;"
+    >
+      <a 
+        href="#" 
+        onclick="
+          i.toggleExpand(${i.escapeWithQuotes(node.id)}); 
+          return false
+        "
+      >
+        ${node.expanded ? '⊟' : '⊞'}
+      </a>
+    </span>` : ( nested ?
+      i.children(node).map(child => i.nodeDisplay(child, true)) : ''
+    )
+  ) + (node.expanded ?
+    `<div style="color:lightgray; font-size:small;">
+      <ul>
+        ${i.children(node).filter(child => !i.current.thread.includes(child)).map( child => 
+          `<li>
+            ${i.nodeDisplay(child, true)}
+          </li>`
+        ).join('')}
+      </ul>
+    </div>` : ''
+  )
 
 i.display = nodes => 
-  `<div style="font-family: Barlow, sans-serif; line-height: 1.5;">${nodes.map(node => {
-    let body = ( node == i.current.node ? '' : i.nodeDisplay(node) )
-    if ( i.branched(node) ) {
-      body += `<span style="color: lightgray; font-size:x-small; vertical-align: bottom;"><a href="#" onclick="i.toggleExpand(${i.escapeWithQuotes(node.id)}); return false">${node.expanded ? '⊟' : '⊞'}</a></span>`
-      if ( node.expanded ) {
-        body += `<div style="color:lightgray; font-size:small;"><ul>${i.children(node).filter(child => !i.current.thread.includes(child)).map( child => 
-          `<li>${i.nodeDisplay(child)}</li>`
-        ).join('')}</ul></div>`
-      }
-    }
-    return body
-  }).join('')}</div>`
+  `<div style="font-family: Barlow, sans-serif; line-height: 1.5;">${_.map(nodes, i.nodeDisplay).join('')}</div>`
 
 i.bodyInput = () => document.getElementById('body-input')
 
@@ -321,7 +350,7 @@ B.enclosingNodes = () => {
   if ( nodeIndex )
     return [
       thread.slice(0, nodeIndex),
-      thread.slice(nodeIndex+1)
+      thread.slice(nodeIndex)
     ]
   else
     return [thread, []]
@@ -330,6 +359,19 @@ B.enclosingNodes = () => {
 B.displayBeforeAfter = () => _.map(B.enclosingNodes(), i.display)
 
 // Generic
+
+download = (text, filename) => {
+  let element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  element.setAttribute('download', filename);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
+}
 
 stringify = value => JSON.stringify(value).replaceAll(/^"|"$/g, '')
 
