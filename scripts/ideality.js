@@ -6,14 +6,44 @@ if (!window.i)
 if (!i.current)
   i.current = {}
 
+S = {
+  threadDefined: () => S.threadIndex >=0,
+  nodeDefined: () => S.nodeIndex >=0
+}
+
 Object.defineProperties(i.current, {
   node: {
-    get: () => i.current.thread[Stator.nodeIndex]
+    get: () => S.threadDefined() ? i.current.thread[S.nodeIndex] : null
   },
   thread: {
-    get: () => i.threads()[Stator.threadIndex]
+    get: () => i.threads()[S.threadDefined() ? S.threadIndex : 0]
   }
 })
+
+i.tree = (nodes = i.rootNodes()) =>
+  nodes.map(node => ({
+    ...node, children: i.tree(i.children(node))
+  }))
+
+
+i.xmlTree = (nodes = i.rootNodes(), { container } = {}) => {
+
+  if ( !container ) {
+    container = document.createElement('ul')
+    container.id = 'document-tree'
+  }
+
+  nodes.forEach( node => {
+    let element = document.createElement('li')
+    element.setAttribute('id', node.id)
+    element.innerText = node.body
+    i.xmlTree(i.children(node), {container: element.appendChild(document.createElement('ul'))})
+    container.appendChild(element)
+  })
+
+  return container
+
+}
 
 i.yaml = () => jsyaml.dump(_.pick(ideality, ['nodes']))
 
@@ -30,7 +60,7 @@ i.nodeById = id => _.find(i.nodes, {id})
 
 i.currentNode = () => i.nodeById(i.nodeId)
 
-i.parent = node => node ? i.nodeById(node.parentId) : undefined
+i.parent = node => node ? i.nodeById(node.parentId) : null
 
 i.setParent = (node, parent) => Object.assign(node, { parentId: parent ? parent.id : null })
 
@@ -45,7 +75,7 @@ i.siblings = node => _.without(
 
 i.hasSiblings = node => i.siblings(node).length > 0
 
-i.leafs = () => i.nodes.filter(node => i.children(node).length == 0)
+i.leafs = (nodes = i.nodes) => nodes.filter(node => i.children(node).length == 0)
 
 i.ancestors = node => {
   let parent = i.parent(node)
@@ -61,7 +91,7 @@ i.descendants = (parent, thread) =>
       [child, ...i.descendants(child)]
     ).flat()
 
-i.heritage = node => node ? [node, ...i.heritage(_.last(i.children(node)))] : []
+i.heritage = node => node ? [node, ...i.heritage(_.first(i.children(node)))] : []
 
 i.branchedNodes = (nodes) =>
   (nodes || i.nodes).filter(node => i.branched(node))
@@ -84,7 +114,9 @@ T = i.Threads = {}
 
 T.withNode = (node, threads = T.all()) => node ? threads.filter(thread => thread.includes(node)) : threads
 
-T.all = i.threads = () => i.leafs().map( node => [...i.ancestors(node), node] )
+i.threads = (nodes = i.nodes) => i.leafs(nodes).map( node => [...i.ancestors(node), node] )
+
+T.all = i.threads()
 
 i.threadsFor = node => i.threads().filter(thread => thread.includes(node))
 
@@ -111,7 +143,7 @@ N.create = () => {
 
 N.branchOut = parent => i.setParent(N.create(), parent)
 
-N.createSibling = node => N.branchOut(i.parent(node))
+N.createSibling = node => N.branchOut(Object.assign(i.parent(node), {expanded: true}))
 
 N.insert = parent => {
   let children = i.children(parent)
@@ -135,7 +167,7 @@ N.clone = (node, deep = false, newParent = i.parent(node)) => {
 
 N.cloneBranch = node => N.clone(node, true)
 
-N.delete = (node, {deep, remember, topmost}) => {
+N.delete = (node, {deep, remember, topmost} = {}) => {
   if ( remember ) {
     if ( topmost ) {
       i.copiedNodes = []
@@ -225,7 +257,7 @@ i.routingIndices = node => {
 i.routingString = node => 
   _.map(
     i.routingIndices(node), 
-    (value, key) => [key, value].join('=')
+    (value, key) => [key, value+1].join('=')
   ).join('&')
 
 
@@ -255,7 +287,7 @@ i.nodeDisplay = (node, nested) =>
     </span>` : ( nested ?
       i.children(node).map(child => i.nodeDisplay(child, true)) : ''
     )
-  ) + (node.expanded ?
+  ) + (node.expanded && i.branched(node) ?
     `<div style="color:lightgray; font-size:small;">
       <ul>
         ${i.children(node).filter(child => !i.current.thread.includes(child)).map( child => 
@@ -268,7 +300,7 @@ i.nodeDisplay = (node, nested) =>
   )
 
 i.display = nodes => 
-  `<div style="font-family: Barlow, sans-serif; line-height: 1.5;">${_.map(nodes, i.nodeDisplay).join('')}</div>`
+  `<div style="font-family: Barlow, sans-serif; line-height: 1.5;">${_.map(nodes, node => i.nodeDisplay(node, false)).join('')}</div>`
 
 i.bodyInput = () => document.getElementById('body-input')
 
@@ -330,8 +362,8 @@ ai.complete = async (nodes, api) => {
 
 B = ideality.Bubble = {}
 
-B.loadYaml = () => {
-  _.assign(i, jsyaml.load(Stator.yaml))
+B.loadYaml = (yaml = S.yaml) => {
+  _.assign(i, jsyaml.load(yaml))
   i.history = [i.savedJson = JSON.stringify(i.nodes)]
   i.refresh()
 }
@@ -345,9 +377,9 @@ B.doAction = slug => {
 }
 
 B.enclosingNodes = () => {
-  let { nodeIndex } = Stator
-  let { thread } = i.current
-  if ( nodeIndex )
+  let { nodeIndex } = S
+  let { node, thread } = i.current
+  if ( node )
     return [
       thread.slice(0, nodeIndex),
       thread.slice(nodeIndex)
@@ -402,7 +434,7 @@ i.fetch = async (url, {method, auth, headers, params, body}) => {
 post = (url, args) => i.fetch(url, {method: 'POST', ...args})
 
 log = what => {
-  if (Stator.appVersion == 'test') console.log(what)
+  if (S.appVersion == 'test') console.log(what)
   return what
 }
 

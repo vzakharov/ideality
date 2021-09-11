@@ -1,92 +1,205 @@
-nodes:
-  - id: '10'
-    parentId: null
-    body: 'As it stands, the AI market is divided among the large, '
-    expanded: false
-  - id: '21'
-    parentId: '10'
-    body: >2-
-       well-established technology companies, most notably IBM, Intel, Nvidia, Microsoft. Smaller firms are working on AI-based products as well.
+- id: '1'
+  body: <div></div>
+  children:
+    - id: '2'
+      parentId: '1'
+      body: >+
+        Democratizing on the Edge, or How (and Why) to Make Smart Chips for the
+        Masses”
 
-      Thus far there is no dominant AI platform with hundreds of thousands of
-      developers which are building applications on it that are flooding the
-      market.
-  - id: '22'
-    parentId: '10'
-    body: 'established corporations and '
-  - id: '23'
-    parentId: '22'
-    body: >-
-      newer players. But the future of AI is more than just a battle of giants:
-      It's about harnessing technology to make life easier and better for us
-      all.
+      children:
+        - id: '8'
+          parentId: '2'
+          body: >+
+            Outline
+
+            1. The AI industry is booming, but the hardware that powers it is
+            not.
+
+            2. The industry is effectively monopolized by a few big players, who
+            enjoy economies of scale and captive supply chains.
+
+            3. This is a problem for many chipmakers, who can’t make money off
+            the hardware they themselves produce.
+
+            4. How can this situation be improved?
+
+            A. By addressing the entry barriers with respect to the DLA market.
+
+            B. By adopting IP core solutions that enable easy integration into
+            silicon.
+
+            C. By lowering the cost of DLA solutions through innovation rather
+            than quality deterioration.
+
+            5. A look into the future: What will democratizing AI hardware mean
+            for the industry — and the world?
+
+          expanded: true
+          children:
+            - id: '40'
+              parentId: '8'
+              body: <div>
+              children:
+                - id: '27'
+                  parentId: '40'
+                  body: >-
+                    Today’s AI hardware market is effectively monopolized by a
+                    few big players, who enjoy economies of scale and captive
+                    supply chains.
+                  children:
+                    - id: '28'
+                      parentId: '27'
+                      body: ' This is especially evident in the cloud computing market, where hyperscalers such as Google, Amazon and Microsoft '
+                      children:
+                        - id: '11'
+                          parentId: '28'
+                          body: are spending billions [need to fact-check]
+                          expanded: true
+                          children:
+                            - id: '13'
+                              parentId: '11'
+                              body: to build their own
+                              children:
+                                - id: '14'
+                                  parentId: '13'
+                                  body: ' proprietary hardware. Sometimes (cue Google TPU) they go as far as only making them available'
+                                  children:
+                                    - id: '15'
+                                      parentId: '14'
+                                      body: ' through their cloud infrastructure and not'
+                                      expanded: true
+                                      children:
+                                        - id: '21'
+                                          parentId: '15'
+                                          body: ' letting the customer actually touch them at all. The situation in edge computing is not much different, with the likes of Nvidia'
+                                          expanded: true
+                                          children:
+                                            - id: '25'
+                                              parentId: '21'
+                                              body: ' and Intel enjoying'
+                                              expanded: true
+                                              children:
+                                                - id: '37'
+                                                  parentId: '25'
+                                                  body: ' the fruits'
+                                                  children:
+                                                    - id: '39'
+                                                      parentId: '37'
+                                                      body: ' of their monopolistic practices.'
+                                                      children: []
+                                                    - id: '38'
+                                                      parentId: '37'
+                                                      body: ' of their hard work in FPGAs [We’d like to examine ASICs vs. FPGAs vs. DSPs] and SoCs for years while still relying on specialized knowledge to get them up and running.'
+                                                      children: []
+                                                - id: '36'
+                                                  parentId: '25'
+                                                  body: |2+
+                                                     a near monopoly.
+
+                                                  expanded: true
+                                                  children:
+                                                    - id: '33'
+                                                      parentId: '36'
+                                                      body: Just like any
+                                                      expanded: true
+                                                      children:
+                                                        - id: '35'
+                                                          parentId: '33'
+                                                          body: ' other monopoly, the AI hardware suppliers can charge high prices for their products and enjoy profits. But the reality is that many companies (especially startups) simply cannot afford to develop their own AI hardware.'
+                                                          children: []
+                                                        - id: '34'
+                                                          parentId: '33'
+                                                          body: ' monopolistic or oligopolistic industry, this enables these players to set the price of the hardware they produce, which is not necessarily in line with their actual costs. It also gives them enough leverage to block further competition via technological and even legal means (via patent and/or trademark laws).'
+                                                          children: []
+                                                    - id: '29'
+                                                      parentId: '36'
+                                                      body: Can this
+                                                      children:
+                                                        - id: '26'
+                                                          parentId: '29'
+                                                          body: ' situation be improved? We think it can. We have spent the last two years working on a hardware-agnostic DLA core. The core is now ready, and we have been encouraging silicon vendors to adopt the technology.'
+                                                          children: []
+                                                    - id: '3'
+                                                      parentId: '36'
+                                                      body: An ancient wisdom
+                                                      expanded: true
+                                                      children:
+                                                        - id: '7'
+                                                          parentId: '3'
+                                                          body: ' states '
+                                                          expanded: true
+                                                          children:
+                                                            - id: '4'
+                                                              parentId: '7'
+                                                              body: >-
+                                                                that the best way to win a war is by
+                                                                making sure the enemy doesn’t know
+                                                                you’re fighting.
+                                                              expanded: true
+                                                              children:
+                                                                - id: '32'
+                                                                  parentId: '4'
+                                                                  body: ' If you want to dominate the industry without your competitors realizing what you’re up to, however, this is precisely what you don’t want to do.'
+                                                                  children: []
+                                                                - id: '30'
+                                                                  parentId: '4'
+                                                                  body: ' In case of AI-enabled hardware, it seems like a perfect setting for smaller players: The big ones are too busy fighting each other to notice'
+                                                                  expanded: true
+                                                                  children:
+                                                                    - id: '10'
+                                                                      parentId: '30'
+                                                                      body: ' the little guys. '
+                                                                      expanded: true
+                                                                      children: []
+                                                                    - id: '9'
+                                                                      parentId: '30'
+                                                                      body: >2+
+                                                                         the small ones.
+
+                                                                        But it’s not that simple, of course. The
+                                                                        big players have a lot of advantages:
+                                                                        They enjoy economies of scale and
+                                                                        captive supply chains; they can afford
+                                                                        to spend more on R&D; and, most
+                                                                        importantly, they have access to the
+                                                                        best talent.
+
+                                                                      children: []
+                                            - id: '23'
+                                              parentId: '21'
+                                              body: ' and Intel enjoying'
+                                              expanded: true
+                                              children:
+                                                - id: '24'
+                                                  parentId: '23'
+                                                  body: >2-
+                                                     huge market share in tech titans’s favor.
+                                                    The tech titans are fighting each other
+                                                    for data-center supremacy, while the
+                                                    rest of the world is left out to dry.
+
+                                                    Full article
 
 
-      The most disruptive use cases involve combining what we know about each
-      other with data from our surroundings—the way that automated car
-      navigation systems, for example, can combine information from your phone's
-      GPS and the satellite map on your screen to recommend an optimal route
-      home.
-  - id: '24'
-    parentId: '22'
-    body: 'the small, agile startups. The former '
-    expanded: false
-  - id: '25'
-    parentId: '24'
-    body: >-
-      are better computing power and more data, but the latter typically have
-      more novel ideas and innovative solutions to problems. As the AI landscape
-      evolves, two things remain constant: people work to make AI smarter, and
-      people develop new applications for it.
+                                                    Interviews with the press are very time
+                                                    consuming and quite annoying.
+                                                  children: []
+                                            - id: '22'
+                                              parentId: '21'
+                                              body: ' and Intel racing to the top of the charts.'
+                                              children: []
+                                        - id: '16'
+                                          parentId: '15'
+                                          body: ' even shipping them to their clients.'
+                                          children: []
+                            - id: '12'
+                              parentId: '11'
+                              body: >2-
+                                 on AI hardware.
 
-
-      With that in mind, here are three popular applications of AI that you can
-      find on any device or computer today—and what's in store for the future.
-  - id: '26'
-    parentId: '24'
-    body: 'never seems to be able to '
-  - id: '27'
-    parentId: '26'
-    body: >-
-      keep up with the pace and creativity of the latter.
-
-
-      The small, agile startups that are leading the AI market today dominate
-      this sphere through sheer energy, guts and determination. They take
-      advantage of existing platforms for their products such as Amazon's Alexa
-      and Google's speech recognition software, which they develop in-house.
-      This makes them faster than their competitors and superior in quality.
-  - id: '28'
-    parentId: '26'
-    body: >-
-      provide the benefits of AI to all their customers, while the latter can
-      never fully exploit their full potential. The biggest hindrance to these
-      startups' success is the lack of talent in AI development.
-
-
-      This is where this article comes in. We've put together a list of AI
-      hiring companies that are looking for talented developers. This list will
-      help you locate your 
-    expanded: false
-  - id: '29'
-    parentId: '30'
-  - id: '30'
-    parentId: '28'
-    body: >-
-      talents among different companies and get your foot in the door if you're
-      an aspiring developer who wants to work with exciting AI products.
-  - id: '31'
-    parentId: '28'
-    body: >-
-      dream job in AI.
-
-
-      If you're a developer with experience in data science and the desire to
-      learn the new cutting-edge technology, then this is your list. If you're a
-      data scientist interested in transitioning into a development role, then
-      this is your list. If you're a technical recruiter who would like to
-      expand your skill set, then this is your list!
-
-
-      We've been asked for years about what companies are hiring Data Scientists
-      and I've been sitting on this information for quite some time.
+                                But the situation is not as rosy in other
+                                markets. The big players have a lot of money to
+                                spend, but they also have a lot of competition:
+                                startups such as Ed
+                              children: []
