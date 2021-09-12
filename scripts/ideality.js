@@ -6,19 +6,38 @@ if (!window.i)
 if (!i.current)
   i.current = {}
 
-S = {
-  threadDefined: () => S.threadIndex >=0,
-  nodeDefined: () => S.nodeIndex >=0
-}
+// S = {
+//   threadDefined: () => S.threadIndex >=0,
+//   nodeDefined: () => S.nodeIndex >=0
+// }
 
-Object.defineProperties(i.current, {
-  node: {
-    get: () => S.threadDefined() ? i.current.thread[S.nodeIndex] : null
-  },
-  thread: {
-    get: () => i.threads()[S.threadDefined() ? S.threadIndex : 0]
-  }
-})
+
+// Object.defineProperties(i.current, {
+//   nodeIndex: {
+//     get: () => i.getIntParam('n'),
+//   },
+//   threadIndex: {
+//     get: () => i.getIntParam('v'),
+//   },
+//   node: {
+//     get: () => log(i.current.threadIndex ? i.current.thread[i.current.nodeIndex-1] : null)
+//   },
+//   thread: {
+//     get: () => log(i.threads()[i.current.threadIndex ? i.current.threadIndex-1 : 0])
+//   }
+// })
+
+i.getIntParam = (url=window.location.href, name) => parseInt(new URL(url).searchParams.get(name))
+
+i.route = url => {
+  let threadIndex = i.getIntParam(url, 'v') || 1
+  let thread = i.threads()[threadIndex-1]
+  let nodeIndex = threadIndex ? i.getIntParam(url, 'n') : null
+  let node = nodeIndex ? thread[nodeIndex-1] : null
+  _.assign(i.current, { threadIndex, nodeIndex, thread, node })
+  bubble_fn_routed(true)
+  return node && node.id
+}
 
 i.tree = (nodes = i.rootNodes()) =>
   nodes.map(node => ({
@@ -52,8 +71,12 @@ i.save = () => {
   bubble_fn_save(i.yaml())
 }
 
-i.download = () => {
+i.downloadYaml = () => {
   download(i.yaml(), S.documentSlug+'.yml')
+}
+
+i.downloadThread = () => {
+  download(i.current.thread.map(node => node.body || '').join(''), S.documentSlug+'.txt')
 }
 
 i.nodeById = id => _.find(i.nodes, {id})
@@ -122,9 +145,9 @@ i.threadsFor = node => i.threads().filter(thread => thread.includes(node))
 
 i.defaultThreadFor = node => (i.threadsFor(node))[0]
 
-i.refresh = (dontFocusOnInput) => {
-  i.history.push(JSON.stringify(i.nodes))
-  bubble_fn_refresh(dontFocusOnInput)
+i.refresh = () => {
+  // i.history.push(JSON.stringify(i.nodes))
+  bubble_fn_refresh(parseInt(new Date().toISOString().replace(/\D/g, '')))
 }
 
 N = i.NodeAction = {}
@@ -201,7 +224,9 @@ N.paste = ( nodeToPasteAfter ) => {
   return topCopiedNode
 }
 
-N.split = ( node, at = i.bodyInput().selectionStart ) => {
+i.caretPosition = () => i.bodyInput().selectionStart
+
+N.split = ( node, at = i.caretPosition() ) => {
   let newNode = N.insert(node)
   let { body } = node
   node.body = body.slice(0, log(at))
@@ -219,8 +244,32 @@ N.mergeWithParent = node => {
   return node
 }
 
-N.complete = async node =>
-  _.assign(node, {body: (node.body || '') + await ai.complete(i.lineage(node), i.api)})
+N.mergeAndPurge = node => {
+  i.siblings(node).forEach(sibling => N.deleteBranch(sibling))
+  return N.mergeWithParent(node)
+}
+
+N.complete = async node => {
+  let { api } = i
+
+  let response = await ai.complete(i.lineage(node), i.api)
+
+  if ( node.body && ( node.body.length != i.caretPosition() || api.supportsMultiple )) {
+    node = N.split(node)
+    if ( node.body )
+      node = N.createSibling(node)
+  }
+  if ( api.supportsMultiple ) {
+    response.forEach(body => {
+      if ( node.body )
+        node = N.createSibling(node)
+      _.assign(node, {body})
+    })
+    return node
+  } else {
+    return _.assign(node, {body: (node.body || '') + response})
+  }  
+}
 
 i.listOfJsons = elements => elements.map(element => JSON.stringify(element))
 
@@ -238,7 +287,7 @@ i.escapeWithQuotes = string => _.escape(`"${string}"`)
 i.toggleExpand = id => {
   let node = i.nodeById(id)
   node.expanded = !node.expanded
-  bubble_fn_refresh()
+  i.refresh()
 }
 
 i.threadIndex = thread => i.threads().findIndex(t => _.last(t) == _.last(thread))
@@ -304,6 +353,8 @@ i.display = nodes =>
 
 i.bodyInput = () => document.getElementById('body-input')
 
+i.bodyInputFocused = () => document.activeElement == i.bodyInput()
+
 i.depth = node => i.ancestors(node).filter(ancestor => i.branched(ancestor)).length
 
 i.rootNodes = () => i.nodes.filter(node => !node.parentId)
@@ -319,9 +370,10 @@ i.sortAsTree = (parents = i.rootNodes()) =>
 i.gotoId = id => i.goto(i.nodeById(id))
 
 i.goto = node => {
-  if (node != i.current.node)
-    bubble_fn_goto(_.values(i.routingIndices(node)))
-  else
+  let newIndices = i.routingIndices(node)
+  if (!equalJsons(newIndices, i.routingIndices(i.current.node))) {
+    bubble_fn_goto(_.values(newIndices))
+  } else
     i.refresh()
 }
 
@@ -341,7 +393,7 @@ ai.complete = async (nodes, api) => {
     return node.body
   }).join('')
 
-  let { url, auth, bodyPattern, parameters, location } = {parameters: {}, ...api}
+  let { url, auth, bodyPattern, parameters, location, arrayLocation } = {parameters: {}, ...api}
 
 
   _.assign(parameters, { prompt })
@@ -353,7 +405,11 @@ ai.complete = async (nodes, api) => {
   let body = JSON.parse(bodyPattern)
 
   console.log ({auth, body})
-  return _.get(await post(url, {auth, body}), location)
+  let response = await post(url, {auth, body})
+  if ( api.supportsMultiple ) 
+    return response[arrayLocation].map(choice => choice[location])
+  else
+    return response[location]
 
 }
 
@@ -391,6 +447,8 @@ B.enclosingNodes = () => {
 B.displayBeforeAfter = () => _.map(B.enclosingNodes(), i.display)
 
 // Generic
+
+equalJsons = (a, b) => JSON.stringify(a) == JSON.stringify(b)
 
 download = (text, filename) => {
   let element = document.createElement('a');
