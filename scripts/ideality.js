@@ -1,40 +1,31 @@
-if (!window.i)
-  i = ideality = {
-    nodes: []
-  }
+i.nodes = []
 
 if (!i.current)
   i.current = {}
 
-// S = {
-//   threadDefined: () => S.threadIndex >=0,
-//   nodeDefined: () => S.nodeIndex >=0
-// }
+defineProperties = (object, properties) =>
+Object.defineProperties(
+  object, 
+  _.mapValues(properties, property => 
+    _.assign(property, {
+      configurable: true
+    })
+  )
+)
 
 
-// Object.defineProperties(i.current, {
-//   nodeIndex: {
-//     get: () => i.getIntParam('n'),
-//   },
-//   threadIndex: {
-//     get: () => i.getIntParam('v'),
-//   },
-//   node: {
-//     get: () => log(i.current.threadIndex ? i.current.thread[i.current.nodeIndex-1] : null)
-//   },
-//   thread: {
-//     get: () => log(i.threads()[i.current.threadIndex ? i.current.threadIndex-1 : 0])
-//   }
-// })
-
-i.getIntParam = (url=window.location.href, name) => parseInt(new URL(url).searchParams.get(name))
+i.getParam = name => new URL(window.location.href).searchParams.get(name)
 
 i.route = url => {
-  let threadIndex = i.getIntParam(url, 'v') || 1
-  let thread = i.threads()[threadIndex-1]
-  let nodeIndex = threadIndex ? i.getIntParam(url, 'n') : null
-  let node = nodeIndex ? thread[nodeIndex-1] : null
-  _.assign(i.current, { threadIndex, nodeIndex, thread, node })
+  // debugger
+  let variationId = i.getParam('v')
+  let variation = i.nodeById(variationId) 
+  let thread = variation ? i.threads().find(thread => thread.includes(variation)) : i.threads()[0]
+  let nodeId = i.getParam('n')
+  let node = i.nodeById(nodeId)
+  if ( !thread.includes(node) )
+    node = null
+  _.assign(i.current, { thread, node })
   bubble_fn_routed(true)
   return node && node.id
 }
@@ -145,8 +136,9 @@ i.threadsFor = node => i.threads().filter(thread => thread.includes(node))
 
 i.defaultThreadFor = node => (i.threadsFor(node))[0]
 
-i.refresh = () => {
+i.refresh = ({ dontFocusOnInput } = {}) => {
   // i.history.push(JSON.stringify(i.nodes))
+  _.assign(S, {dontFocusOnInput} )
   bubble_fn_refresh(parseInt(new Date().toISOString().replace(/\D/g, '')))
 }
 
@@ -209,6 +201,11 @@ N.delete = (node, {deep, remember, topmost} = {}) => {
 
 N.deleteBranch = (node, remember) => N.delete(node, {deep: true, remember, topmost: true})
 
+N.deleteChildren = node => {
+  i.children(node).forEach(child => N.deleteBranch(child))
+  return node
+}
+
 N.copy = node => {
   N.cut(N.cloneBranch(node))
   return node
@@ -254,8 +251,13 @@ N.complete = async node => {
 
   let response = await ai.complete(i.lineage(node), i.api)
 
+  let originalNode = node
+
   if ( node.body && ( node.body.length != i.caretPosition() || api.supportsMultiple )) {
-    node = N.split(node)
+    if ( node.body.length == i.caretPosition() )
+      node = N.branchOut(node)
+    else
+      node = N.split(node)
     if ( node.body )
       node = N.createSibling(node)
   }
@@ -265,7 +267,7 @@ N.complete = async node => {
         node = N.createSibling(node)
       _.assign(node, {body})
     })
-    return node
+    return originalNode
   } else {
     return _.assign(node, {body: (node.body || '') + response})
   }  
@@ -287,26 +289,27 @@ i.escapeWithQuotes = string => _.escape(`"${string}"`)
 i.toggleExpand = id => {
   let node = i.nodeById(id)
   node.expanded = !node.expanded
-  i.refresh()
+  i.refresh({ dontFocusOnInput: true })
 }
 
 i.threadIndex = thread => i.threads().findIndex(t => _.last(t) == _.last(thread))
 
 i.routingIndices = node => {
+  // debugger
   let { thread } = i.current
   if ( !thread || !thread.includes(node) ) {
-    thread = _.find(i.threads(), thread => thread.includes(node))
+    thread = _.find(i.threads(), thread => thread.includes(node)) || i.threads()[0]
   }
   return {
-    v: i.threadIndex(thread),
-    n: _.findIndex(thread, node)
+    v: _.last(thread).id,
+    n: node && node.id
   }
 }
 
 i.routingString = node => 
   _.map(
     i.routingIndices(node), 
-    (value, key) => [key, value+1].join('=')
+    (value, key) => [key, value].join('=')
   ).join('&')
 
 
@@ -337,7 +340,7 @@ i.nodeDisplay = (node, nested) =>
       i.children(node).map(child => i.nodeDisplay(child, true)) : ''
     )
   ) + (node.expanded && i.branched(node) ?
-    `<div style="color:lightgray; font-size:small;">
+    `<div style="color:gray; font-size:small;">
       <ul>
         ${i.children(node).filter(child => !i.current.thread.includes(child)).map( child => 
           `<li>
@@ -349,7 +352,7 @@ i.nodeDisplay = (node, nested) =>
   )
 
 i.display = nodes => 
-  `<div style="font-family: Barlow, sans-serif; line-height: 1.5;">${_.map(nodes, node => i.nodeDisplay(node, false)).join('')}</div>`
+  `<div style="font-family: Barlow, sans-serif; line-height: 1.5; font-size: large;">${_.map(nodes, node => i.nodeDisplay(node, false)).join('')}</div>`
 
 i.bodyInput = () => document.getElementById('body-input')
 
@@ -387,11 +390,57 @@ i.treeView = node =>
 
 ai = ideality.AI = {}
 
+ai.getPrompt = (node = i.current.node) => {
+  let prompt = _.map (
+    node ? i.lineage(node) : i.current.thread,
+    'body'
+  ).join('')
+  let { cut } = _.get(i, 'api.config.settings')
+  if ( cut ) {
+    let { maxTokens, anchor, replaceWith } = cut
+    let cutAt = prompt.indexOf(anchor)
+    prompt = prompt.replace(anchor, '')
+    let tokens = i.encode(prompt)
+    let nToCut = tokens.length - maxTokens
+    ai.promptWasCut = nToCut > 0
+    if ( nToCut > 0 ) {
+      let 
+        fixedPrompt = prompt.slice(0, cutAt),
+        fixedTokens = i.encode(fixedPrompt),
+        replaceTokens = i.encode(replaceWith),
+        tokensLeft = maxTokens - fixedTokens.length - replaceTokens.length,
+        promptToCut = prompt.slice(cutAt),
+        tokensToCut = i.encode(promptToCut),
+        nTokensToDiscard = tokensToCut.length - tokensLeft
+      prompt =
+        fixedPrompt
+        + replaceWith
+        + i.decode(
+          tokensToCut.slice(
+            nTokensToDiscard
+          )
+        )
+    }
+  }
+  return prompt
+}
+
+ai.getTokens = ( text = ai.prompt ) => i.encode(text)
+
+defineProperties(ai, {
+
+  prompt: { get: ai.getPrompt },
+
+  tokens: { get: ai.getTokens }
+  
+})
+
+
 ai.complete = async (nodes, api) => {
 
-  let prompt = nodes.map(node => {
-    return node.body
-  }).join('')
+  debugger
+  
+  let { prompt } = ai
 
   let { url, auth, bodyPattern, parameters, location, arrayLocation } = {parameters: {}, ...api}
 
@@ -433,8 +482,8 @@ B.doAction = slug => {
 }
 
 B.enclosingNodes = () => {
-  let { nodeIndex } = S
   let { node, thread } = i.current
+  let nodeIndex = _.findIndex(thread, node)
   if ( node )
     return [
       thread.slice(0, nodeIndex),

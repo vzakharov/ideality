@@ -1,0 +1,58 @@
+---
+settings:
+  cut:
+    maxTokens: 1000
+    anchor: >
+      %CUT FROM HERE%
+    replaceWith: >
+
+      (...)
+
+  fetch:
+    url: https://api.openai.com/v1/engines/<Engine>/completions
+    auth: Bearer <API key>
+    body: >-
+      {
+      prompt: "<Prompt>",
+      temperature: <Temperature>,
+      max_tokens: <Max tokens>,
+      frequency_penalty: <Frequency penalty>,
+      presence_penalty: <Presence penalty>,
+      n: <Number of outputs>
+      }
+parameters:
+  - name: API key
+    type: password
+  - name: Engine
+    type: enum
+    options:
+    - davinci
+    - curie
+    - babbage
+    - ada
+    - davinci-instruct-beta
+    - curie-instruct-beta
+    value: curie
+  - name: Temperature
+    type: decimal
+    min: 0
+    max: 1
+    value: 0.5
+  - name: Max tokens
+    type: integer
+    min: 1
+    value: 50
+  - name: Frequency penalty
+    type: decimal
+    min: 0
+    max: 1
+    value: 1
+  - name: Presence penalty
+    type: decimal
+    min: 0
+    max: 1
+    value: 1
+  - name: Number of outputs
+    type: integer
+    min: 1
+    value: 3
