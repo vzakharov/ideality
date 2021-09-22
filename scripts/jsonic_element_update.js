@@ -4,7 +4,7 @@ function(instance, properties, context) {
 
   function update({json} = properties) {
     
-    let { path, updateFunctionName, indent } = properties
+    let { path, indent } = properties
     let object = JSON.parse(json)
     let { result, types } = crawl(object)
 
@@ -28,7 +28,7 @@ function(instance, properties, context) {
     if ( path ) {
       _.set(window, path, object)
       instance.data.object = _.get(window, path)
-      object[updateFunctionName] = () => 
+      object._update_ = () => 
         update({
           json: JSON.stringify(instance.data.object, null, indent)
         })

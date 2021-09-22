@@ -246,10 +246,12 @@ N.mergeAndPurge = node => {
   return N.mergeWithParent(node)
 }
 
+N.save = node => ( i.save(), node )
+
 N.complete = async node => {
   let { api } = i
 
-  let response = await ai.complete(i.lineage(node), i.api)
+  let response = await ai.complete(node, i.api)
 
   let originalNode = node
 
@@ -370,11 +372,21 @@ i.sortAsTree = (parents = i.rootNodes()) =>
     ] 
   ).flat()
 
+i.changeId = ( node, newId ) => {
+  _.filter(i.nodes, {
+    parentId: node.id
+  }).forEach(node => 
+    node.parentId = newId
+  )
+
+  node.id = newId
+}
+
 i.gotoId = id => i.goto(i.nodeById(id))
 
-i.goto = node => {
+i.goto = ( node, reroute) => {
   let newIndices = i.routingIndices(node)
-  if (!equalJsons(newIndices, i.routingIndices(i.current.node))) {
+  if (reroute || !equalJsons(newIndices, i.routingIndices(i.current.node))) {
     bubble_fn_goto(_.values(newIndices))
   } else
     i.refresh()
@@ -399,6 +411,7 @@ ai.getPrompt = (node = i.current.node) => {
   if ( cut ) {
     let { maxTokens, anchor, replaceWith } = cut
     let cutAt = prompt.indexOf(anchor)
+    if ( cutAt < 0 ) cutAt = 0
     prompt = prompt.replace(anchor, '')
     let tokens = i.encode(prompt)
     let nToCut = tokens.length - maxTokens
@@ -436,27 +449,32 @@ defineProperties(ai, {
 })
 
 
-ai.complete = async (nodes, api) => {
+ai.complete = async (node, api) => {
 
-  debugger
+  // debugger
   
-  let { prompt } = ai
+  let prompt = ai.getPrompt(node)
 
-  let { url, auth, bodyPattern, parameters, location, arrayLocation } = {parameters: {}, ...api}
+  let { config, auth, bodyPattern, location, arrayLocation } = {parameters: {}, ...api}
 
+  let { settings, parameters } = config
 
-  _.assign(parameters, { prompt })
+  let settingsString = JSON.stringify(settings).replace('<Prompt>', stringify(stringify(prompt)))
 
-  for ( let slug in log(parameters) ) {
-    bodyPattern = bodyPattern.replace('@'+ slug, stringify(parameters[slug]))
+  for ( let parameter of  parameters ) {
+    settingsString = settingsString.replace(`<${parameter.name}>`, fallback(parameter.text, parameter.number, ''))
   }
 
-  let body = JSON.parse(bodyPattern)
+  settings = JSON.parse(settingsString)
 
-  console.log ({auth, body})
-  let response = await post(url, {auth, body})
+  let { url, fetchArgs } = settings
+
+  console.log(url, fetchArgs)
+
+  let response = await (await fetch(url, fetchArgs)).json()
+
   if ( api.supportsMultiple ) 
-    return response[arrayLocation].map(choice => choice[location])
+    return response[arrayLocation].map(choice => _.get(choice, location))
   else
     return response[location]
 
@@ -496,6 +514,13 @@ B.enclosingNodes = () => {
 B.displayBeforeAfter = () => _.map(B.enclosingNodes(), i.display)
 
 // Generic
+
+fallback = (...chain) => 
+  chain.length ?
+    typeof chain[0] === 'undefined' ?
+      fallback(...chain.slice(1))
+      : chain[0]
+    : undefined
 
 equalJsons = (a, b) => JSON.stringify(a) == JSON.stringify(b)
 
@@ -582,4 +607,23 @@ fl.add = (...objects) =>
   )
 
   
-true
+$(document).bind('keydown', e => {
+
+  if ( e.ctrlKey ) {
+    let slugByKeyCode = {
+      83: 'save',
+      13: 'split',
+      32: 'complete'
+    }
+  
+    let slug = slugByKeyCode[e.which]
+
+    if ( slug ) {
+      e.preventDefault()
+      B.doAction(slug)
+      return false  
+    }
+  }
+})
+
+export { ideality }
