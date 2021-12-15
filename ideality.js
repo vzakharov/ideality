@@ -1,6 +1,3 @@
-i = ideality = {}
-_ = require('lodash')
-
 i.nodes = []
 
 if (!i.current)
@@ -70,7 +67,7 @@ i.downloadYaml = () => {
 }
 
 i.downloadThread = () => {
-  download(i.current.thread.map(node => node.body || '').join(''), S.documentSlug+'.txt')
+  download(i.current.thread.map(node => node.body.replace(i.commentRegex, '') || '').join(''), S.documentSlug+'.txt')
 }
 
 i.nodeById = id => _.find(i.nodes, {id})
@@ -201,13 +198,10 @@ N.delete = (node, {deep, remember, topmost} = {}) => {
       : i.setParent(child, parent)
   )
   _.pull(i.nodes, node)
-  return parent
-}
-
-N.deleteBranch = (node, remember) => {
-  let parent = N.delete(node, {deep: true, remember, topmost: true})
   return i.hasChildren(parent) ? i.children(parent)[0] : parent
 }
+
+N.deleteBranch = (node, remember) => N.delete(node, {deep: true, remember, topmost: true})
 
 N.deleteChildren = node => {
   i.children(node).forEach(child => N.deleteBranch(child))
@@ -263,10 +257,10 @@ N.complete = async node => {
 
   let originalNode = node
 
-  if ( node.body && ( node.body.length != i.caretPosition() || api.supportsMultiple )) {
-    if ( node.body.length == i.caretPosition() )
-      node = N.branchOut(node)
-    else
+  if ( node.body ) { //&& ( node.body.length != i.caretPosition() || api.supportsMultiple )) {
+    // if ( node.body.length == i.caretPosition() )
+    //   node = N.branchOut(node)
+    // else
       node = N.split(node)
     if ( node.body )
       node = N.createSibling(node)
@@ -282,6 +276,16 @@ N.complete = async node => {
     return _.assign(node, {body: (node.body || '') + response})
   }  
 }
+
+N.retry = node => {
+  let parent = i.parent(node)
+  N.delete(node)
+  return N.complete(N.branchOut(parent))
+}
+
+N.tryMore = node => N.complete(
+  N.createSibling(node)
+)
 
 i.listOfJsons = elements => elements.map(element => JSON.stringify(element))
 
@@ -323,6 +327,8 @@ i.routingString = node =>
   ).join('&')
 
 
+i.commentRegex = /\[\[(.*?)\]\](\n?)/g
+
 i.nodeDisplay = (node, nested) => 
   (node == i.current.node ? '' : `<a 
     href="?${i.routingString(node)}" 
@@ -331,7 +337,7 @@ i.nodeDisplay = (node, nested) =>
       return false
     "
   >
-    ${i.escape(node.body) || "<em>[tba]</em>"}
+    ${i.escape(node.body).replace(i.commentRegex, '<em style="color: #CCC">$1$2</em>') || "<em>[tba]</em>"}
   </a>`
   ) + (i.branched(node) ?
     `<span 
@@ -421,6 +427,7 @@ ai.getPrompt = (node = i.current.node) => {
     let cutAt = prompt.indexOf(anchor)
     if ( cutAt < 0 ) cutAt = 0
     prompt = prompt.replace(anchor, '')
+    prompt = prompt.replace(i.commentRegex, '')
     let tokens = i.encode(prompt)
     let nToCut = tokens.length - maxTokens
     ai.promptWasCut = nToCut > 0
@@ -500,11 +507,13 @@ B.loadYaml = (yaml = S.yaml) => {
 }
 
 B.doAction = slug => {
+  bubble_fn_pending(true)
   Promise.resolve(
     N[slug](i.current.node)
-  ).then(newNode =>
+  ).then(newNode => (
+    bubble_fn_pending(false),
     i.goto(newNode)
-  )
+  ))
 }
 
 B.enclosingNodes = () => {
@@ -614,24 +623,28 @@ fl.add = (...objects) =>
     })
   )
 
-bindKeys = () =>
-  $(document).bind('keydown', e => {
+  
+$(document).bind('keydown', e => {
 
-    if ( e.ctrlKey ) {
-      let slugByKeyCode = {
-        83: 'save',
-        13: 'split',
-        32: 'complete'
-      }
-    
-      let slug = slugByKeyCode[e.which]
-
-      if ( slug ) {
-        e.preventDefault()
-        B.doAction(slug)
-        return false  
-      }
+  if ( e.ctrlKey ) {
+    let slugByKeyCode = {
+      83: 'save',
+      13: 'split',
+      32: 'complete'
     }
-  })
+  
+    let slug = slugByKeyCode[e.which]
 
-  true
+    if ( slug ) {
+      e.preventDefault()
+      B.doAction(slug)
+      return false  
+        return false  
+      return false  
+        return false  
+      return false  
+    }
+  }
+})
+
+true
