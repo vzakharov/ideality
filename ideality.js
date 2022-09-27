@@ -1,3 +1,15 @@
+require = async url => {
+  eval(
+    await (
+      await fetch(url)
+    ).text()
+  )
+}
+
+// require('https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js')
+require('https://cdnjs.cloudflare.com/ajax/libs/axios/0.25.0/axios.min.js')
+// require('https://unpkg.com/papaparse@latest/papaparse.min.js')
+
 i.nodes = []
 
 if (!i.current)
@@ -67,7 +79,10 @@ i.downloadYaml = () => {
 }
 
 i.downloadThread = () => {
-  download(i.current.thread.map(node => node.body.replace(i.commentRegex, '') || '').join(''), S.documentSlug+'.txt')
+  let text = i.current.thread.map(node => node.body.replace(i.commentRegex, '') || '').join('')
+  download(text, S.documentSlug+'.txt')
+  // also copy to clipboard
+  navigator.clipboard.writeText(text)
 }
 
 i.nodeById = id => _.find(i.nodes, {id})
